@@ -32,9 +32,11 @@ from .const import (
     CONF_DRAGONSYNC_ENABLED,
     CONF_DRAGONSYNC_HOST,
     CONF_DRAGONSYNC_PORT,
+    CONF_ENTITY_CLEANUP_DAYS,
     CONF_INACTIVE_TIMEOUT,
     DEFAULT_DRAGONSYNC_HOST,
     DEFAULT_DRAGONSYNC_PORT,
+    DEFAULT_ENTITY_CLEANUP_DAYS,
     DEFAULT_INACTIVE_TIMEOUT,
     DOMAIN,
 )
@@ -69,6 +71,9 @@ class OpenDroneIDConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_INACTIVE_TIMEOUT: user_input.get(
                         CONF_INACTIVE_TIMEOUT, DEFAULT_INACTIVE_TIMEOUT
                     ),
+                    CONF_ENTITY_CLEANUP_DAYS: user_input.get(
+                        CONF_ENTITY_CLEANUP_DAYS, DEFAULT_ENTITY_CLEANUP_DAYS
+                    ),
                     CONF_DRAGONSYNC_ENABLED: user_input.get(
                         CONF_DRAGONSYNC_ENABLED, False
                     ),
@@ -95,6 +100,18 @@ class OpenDroneIDConfigFlow(ConfigFlow, domain=DOMAIN):
                             step=10,
                             unit_of_measurement="seconds",
                             mode=NumberSelectorMode.SLIDER,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_ENTITY_CLEANUP_DAYS,
+                        default=DEFAULT_ENTITY_CLEANUP_DAYS,
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1,
+                            max=365,
+                            step=1,
+                            unit_of_measurement="days",
+                            mode=NumberSelectorMode.BOX,
                         )
                     ),
                     vol.Optional(
@@ -163,6 +180,20 @@ class OpenDroneIDOptionsFlow(OptionsFlow):
                             step=10,
                             unit_of_measurement="seconds",
                             mode=NumberSelectorMode.SLIDER,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_ENTITY_CLEANUP_DAYS,
+                        default=self.config_entry.options.get(
+                            CONF_ENTITY_CLEANUP_DAYS, DEFAULT_ENTITY_CLEANUP_DAYS
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1,
+                            max=365,
+                            step=1,
+                            unit_of_measurement="days",
+                            mode=NumberSelectorMode.BOX,
                         )
                     ),
                     vol.Optional(

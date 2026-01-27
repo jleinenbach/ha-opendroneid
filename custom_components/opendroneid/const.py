@@ -21,11 +21,13 @@ MSG_TYPE_MESSAGE_PACK: Final = 0x0F
 
 # Default values
 DEFAULT_SCAN_INTERVAL: Final = 5  # seconds
-DEFAULT_INACTIVE_TIMEOUT: Final = 120  # seconds
+DEFAULT_INACTIVE_TIMEOUT: Final = 120  # seconds - remove from live data
+DEFAULT_ENTITY_CLEANUP_DAYS: Final = 30  # days - remove entity after inactivity
 
 # Configuration keys
 CONF_ESPHOME_PROXIES: Final = "esphome_proxies"
 CONF_INACTIVE_TIMEOUT: Final = "inactive_timeout"
+CONF_ENTITY_CLEANUP_DAYS: Final = "entity_cleanup_days"
 
 # DragonSync configuration
 CONF_DRAGONSYNC_ENABLED: Final = "dragonsync_enabled"

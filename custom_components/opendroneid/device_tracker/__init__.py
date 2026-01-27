@@ -6,14 +6,17 @@ for display on Home Assistant maps.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.device_tracker import SourceType
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.event import async_track_time_interval
 
-from ..const import DOMAIN
+from ..const import CONF_ENTITY_CLEANUP_DAYS, DEFAULT_ENTITY_CLEANUP_DAYS, DOMAIN
 from ..decoder import DroneData, OperationalStatus
 
 if TYPE_CHECKING:
@@ -36,12 +39,19 @@ async def async_setup_entry(
     # Track which drones we've already created entities for
     tracked_drones: set[str] = set()
 
+    # Track last seen timestamps for entity cleanup
+    entity_last_seen: dict[str, datetime] = {}
+
     @callback
     def _async_add_new_drones() -> None:
         """Add device trackers for newly discovered drones."""
         new_entities: list[DroneDeviceTracker] = []
 
         for drone_id, drone_data in coordinator.data.items():
+            # Update last_seen timestamp
+            if drone_data.last_seen:
+                entity_last_seen[drone_id] = drone_data.last_seen
+
             if drone_id not in tracked_drones:
                 tracked_drones.add(drone_id)
                 new_entities.append(
@@ -52,11 +62,50 @@ async def async_setup_entry(
         if new_entities:
             async_add_entities(new_entities)
 
+    async def _async_cleanup_old_entities(_now: datetime | None = None) -> None:
+        """Remove entities that haven't been seen for the configured time."""
+        cleanup_days = entry.options.get(
+            CONF_ENTITY_CLEANUP_DAYS, DEFAULT_ENTITY_CLEANUP_DAYS
+        )
+        cutoff_time = datetime.now(UTC) - timedelta(days=cleanup_days)
+
+        entity_reg = er.async_get(hass)
+        entities_to_remove: list[str] = []
+
+        # Find entities that are too old
+        for drone_id, last_seen in list(entity_last_seen.items()):
+            if last_seen < cutoff_time:
+                entity_id = f"device_tracker.{DOMAIN}_{drone_id}"
+                entity_entry = entity_reg.async_get(entity_id)
+
+                if entity_entry:
+                    entities_to_remove.append(drone_id)
+                    _LOGGER.info(
+                        "Removing device tracker for drone %s (last seen: %s)",
+                        drone_id,
+                        last_seen,
+                    )
+                    entity_reg.async_remove(entity_entry.entity_id)
+
+        # Clean up tracking sets
+        for drone_id in entities_to_remove:
+            tracked_drones.discard(drone_id)
+            entity_last_seen.pop(drone_id, None)
+
     # Add entities for any drones already discovered
     _async_add_new_drones()
 
     # Listen for new drones
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_drones))
+
+    # Schedule daily cleanup of old entities
+    entry.async_on_unload(
+        async_track_time_interval(
+            hass,
+            _async_cleanup_old_entities,
+            timedelta(hours=24),
+        )
+    )
 
 
 class DroneDeviceTracker(TrackerEntity):
