@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 from homeassistant.const import Platform
 from homeassistant.core import callback
@@ -40,7 +40,8 @@ class OpenDroneIDData:
 
 
 # Type alias for config entry (Platinum: strict-typing)
-type OpenDroneIDConfigEntry = ConfigEntry[OpenDroneIDData]
+# Note: Use 'type' statement on Python 3.13+ for HA 2026.1
+OpenDroneIDConfigEntry: TypeAlias = "ConfigEntry[OpenDroneIDData]"
 
 
 async def async_setup_entry(
