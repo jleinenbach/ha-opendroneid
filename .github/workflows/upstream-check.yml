@@ -1,0 +1,119 @@
+name: Upstream Protocol Check
+
+on:
+  schedule:
+    # Weekly on Sundays at 06:00 UTC
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  UPSTREAM_REPO: "opendroneid/opendroneid-core-c"
+  UPSTREAM_HEADER: "libopendroneid/opendroneid.h"
+
+jobs:
+  check-upstream:
+    name: Check for Protocol Updates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get current tracked version
+        id: current
+        run: |
+          if [ -f ".upstream-version" ]; then
+            echo "version=$(cat .upstream-version)" >> $GITHUB_OUTPUT
+          else
+            echo "version=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get upstream latest commit
+        id: get_version
+        run: |
+          COMMIT=$(curl -s "https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/commits/master" | jq -r '.sha[:7]')
+          echo "version=$COMMIT" >> $GITHUB_OUTPUT
+          echo "Upstream version: $COMMIT"
+
+      - name: Fetch upstream header for analysis
+        run: |
+          curl -s "https://raw.githubusercontent.com/${{ env.UPSTREAM_REPO }}/master/${{ env.UPSTREAM_HEADER }}" > /tmp/opendroneid.h
+
+          # Extract message type definitions
+          echo "=== Message Types ===" > /tmp/upstream-analysis.txt
+          grep -E "^#define.*MSG_TYPE" /tmp/opendroneid.h >> /tmp/upstream-analysis.txt || true
+
+          # Extract struct definitions
+          echo "" >> /tmp/upstream-analysis.txt
+          echo "=== Key Structures ===" >> /tmp/upstream-analysis.txt
+          grep -E "^typedef struct|ODID_" /tmp/opendroneid.h | head -50 >> /tmp/upstream-analysis.txt || true
+
+          cat /tmp/upstream-analysis.txt
+
+      - name: Compare versions
+        id: compare
+        run: |
+          if [ "${{ steps.current.outputs.version }}" != "${{ steps.get_version.outputs.version }}" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "🔄 Upstream has changes!"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "✓ No changes detected"
+          fi
+
+      - name: Create issue for protocol update
+        if: steps.compare.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const analysis = fs.readFileSync('/tmp/upstream-analysis.txt', 'utf8');
+
+            const body = `## OpenDroneID Protocol Update Detected
+
+            The upstream protocol specification has been updated.
+
+            **Current tracked version:** \`${{ steps.current.outputs.version }}\`
+            **New upstream version:** \`${{ steps.get_version.outputs.version }}\`
+
+            ### Action Required
+
+            1. Review changes in [opendroneid-core-c](https://github.com/${{ env.UPSTREAM_REPO }}/compare/${{ steps.current.outputs.version }}...${{ steps.get_version.outputs.version }})
+            2. Update decoder in \`custom_components/opendroneid/decoder/__init__.py\`
+            3. Update \`.upstream-version\` file
+            4. Add tests for any new message types
+
+            ### Current Protocol Analysis
+
+            \`\`\`
+            ${analysis}
+            \`\`\`
+
+            ---
+            *This issue was automatically created by the upstream-check workflow.*
+            `;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'upstream-update'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🔄 OpenDroneID Protocol Update: ${{ steps.get_version.outputs.version }}`,
+                body: body,
+                labels: ['upstream-update', 'decoder']
+              });
+              console.log('Created new issue for protocol update');
+            } else {
+              console.log('Issue already exists, skipping');
+            }
