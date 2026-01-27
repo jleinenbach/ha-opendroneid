@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from . import OpenDroneIDConfigEntry
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
+    from . import OpenDroneIDConfigEntry
 
 
 async def async_get_config_entry_diagnostics(
-    hass: Any,
+    hass: HomeAssistant,
     entry: OpenDroneIDConfigEntry,
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""

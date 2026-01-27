@@ -7,7 +7,6 @@ Optionally forwards data to DragonSync via ZMQ.
 
 from __future__ import annotations
 
-import json
 import logging
 import time
 from typing import TYPE_CHECKING, Any
@@ -41,6 +40,8 @@ from ..decoder import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
 
@@ -94,7 +95,7 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         self.data: dict[str, DroneData] = {}
 
         # Track BLE callback registration
-        self._cancel_bluetooth_callback: callable | None = None
+        self._cancel_bluetooth_callback: Callable[[], None] | None = None
 
         # Inactive timeout from options
         self._inactive_timeout = entry.options.get(
@@ -107,8 +108,8 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         self._dragonsync_port = entry.options.get(
             CONF_DRAGONSYNC_PORT, DEFAULT_DRAGONSYNC_PORT
         )
-        self._zmq_socket = None
-        self._zmq_context = None
+        self._zmq_socket: Any = None  # zmq.Socket type not available without import
+        self._zmq_context: Any = None  # zmq.Context type not available without import
 
     async def async_setup(self) -> None:
         """Set up the coordinator and register BLE callback."""
@@ -138,7 +139,7 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
     async def _setup_dragonsync(self) -> None:
         """Set up ZMQ connection to DragonSync."""
         try:
-            import zmq
+            import zmq  # noqa: PLC0415
 
             self._zmq_context = zmq.Context()
             self._zmq_socket = self._zmq_context.socket(zmq.PUB)
@@ -146,13 +147,13 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
             self._zmq_socket.connect(zmq_url)
             _LOGGER.info("DragonSync ZMQ connected to %s", zmq_url)
         except ImportError:
-            _LOGGER.error(
+            _LOGGER.exception(
                 "pyzmq not installed. DragonSync forwarding disabled. "
                 "Install with: pip install pyzmq"
             )
             self._dragonsync_enabled = False
-        except Exception as err:
-            _LOGGER.error("Failed to connect to DragonSync: %s", err)
+        except OSError:
+            _LOGGER.exception("Failed to connect to DragonSync")
             self._dragonsync_enabled = False
 
     async def async_shutdown(self) -> None:
@@ -201,9 +202,7 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         # Decode the service data
         result = self._decoder.decode_service_data(bytes(service_data))
         if not result:
-            _LOGGER.debug(
-                "Failed to decode service data from %s", service_info.address
-            )
+            _LOGGER.debug("Failed to decode service data from %s", service_info.address)
             return
 
         counter, message_data = result
@@ -211,9 +210,7 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         # Decode the message
         message = self._decoder.decode_message(message_data)
         if not message:
-            _LOGGER.debug(
-                "Unknown message type from %s", service_info.address
-            )
+            _LOGGER.debug("Unknown message type from %s", service_info.address)
             return
 
         # Use BLE address as drone identifier (until we get Basic ID)
@@ -255,9 +252,7 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
             drone.uas_id = message.uas_id
             drone.id_type = message.id_type
             drone.ua_type = message.ua_type
-            _LOGGER.debug(
-                "Basic ID: %s (%s)", message.uas_id, message.id_type.name
-            )
+            _LOGGER.debug("Basic ID: %s (%s)", message.uas_id, message.id_type.name)
 
         elif isinstance(message, LocationMessage):
             drone.status = message.status
@@ -363,10 +358,12 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
             # Send via ZMQ
             if zmq_message:
                 self._zmq_socket.send_json(zmq_message)
-                _LOGGER.debug("Sent to DragonSync: %s", drone.uas_id or drone.source_address)
+                _LOGGER.debug(
+                    "Sent to DragonSync: %s", drone.uas_id or drone.source_address
+                )
 
-        except Exception as err:
-            _LOGGER.warning("Failed to send to DragonSync: %s", err)
+        except (OSError, ValueError, TypeError):
+            _LOGGER.exception("Failed to send to DragonSync")
 
     @callback
     def async_remove_inactive_drones(self) -> list[str]:

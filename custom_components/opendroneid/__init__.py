@@ -8,16 +8,16 @@ This integration targets Platinum Quality Scale standards.
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
+import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
 from homeassistant.core import callback
 from homeassistant.helpers.event import async_track_time_interval
 
-from .const import CONF_INACTIVE_TIMEOUT, DEFAULT_INACTIVE_TIMEOUT, DOMAIN
+from .const import CONF_INACTIVE_TIMEOUT, DEFAULT_INACTIVE_TIMEOUT, DOMAIN as DOMAIN
 from .coordinator import OpenDroneIDCoordinator
 
 if TYPE_CHECKING:
@@ -31,15 +31,16 @@ PLATFORMS: list[Platform] = [
     Platform.DEVICE_TRACKER,
 ]
 
-# Type alias for config entry (Platinum: strict-typing)
-type OpenDroneIDConfigEntry = ConfigEntry[OpenDroneIDData]
-
 
 @dataclass
 class OpenDroneIDData:
     """Runtime data for the integration (Bronze: runtime-data)."""
 
     coordinator: OpenDroneIDCoordinator
+
+
+# Type alias for config entry (Platinum: strict-typing)
+type OpenDroneIDConfigEntry = ConfigEntry[OpenDroneIDData]
 
 
 async def async_setup_entry(
@@ -73,7 +74,7 @@ async def async_setup_entry(
     )
 
     @callback
-    def _async_cleanup_inactive(_now) -> None:
+    def _async_cleanup_inactive(_now: datetime) -> None:
         """Remove drones that haven't been seen recently."""
         coordinator.async_remove_inactive_drones()
 

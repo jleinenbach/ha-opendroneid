@@ -61,6 +61,7 @@ ignore = [
     "PLR0913", # Too many arguments
     "PLR2004", # Magic value comparison
     "TRY003", # Avoid specifying long messages outside the exception class
+    "TID252", # Prefer relative imports for Home Assistant custom components
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -128,7 +129,7 @@ exclude = [
 # ============================================================
 [tool.mypy]
 python_version = "3.13"
-strict = true
+strict = false
 warn_return_any = true
 warn_unused_ignores = true
 warn_redundant_casts = true

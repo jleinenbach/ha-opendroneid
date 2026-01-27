@@ -7,19 +7,20 @@ for display on Home Assistant maps.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.device_tracker import SourceType
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from ..const import DOMAIN
 from ..decoder import DroneData, OperationalStatus
 
 if TYPE_CHECKING:
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+    from .. import OpenDroneIDConfigEntry
     from ..coordinator import OpenDroneIDCoordinator
-    from . import OpenDroneIDConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,9 +56,7 @@ async def async_setup_entry(
     _async_add_new_drones()
 
     # Listen for new drones
-    entry.async_on_unload(
-        coordinator.async_add_listener(_async_add_new_drones)
-    )
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_drones))
 
 
 class DroneDeviceTracker(TrackerEntity):
@@ -131,7 +130,7 @@ class DroneDeviceTracker(TrackerEntity):
         return None
 
     @property
-    def extra_state_attributes(self) -> dict[str, any] | None:
+    def extra_state_attributes(self) -> dict[str, Any] | None:  # noqa: PLR0912
         """Return additional state attributes."""
         if self._drone_id not in self.coordinator.data:
             return None
@@ -200,14 +199,13 @@ class DroneDeviceTracker(TrackerEntity):
         # Map operational status to meaningful states
         if drone.status == OperationalStatus.GROUND:
             return "ground"
-        elif drone.status == OperationalStatus.AIRBORNE:
+        if drone.status == OperationalStatus.AIRBORNE:
             return "airborne"
-        elif drone.status == OperationalStatus.EMERGENCY:
+        if drone.status == OperationalStatus.EMERGENCY:
             return "emergency"
-        elif drone.status == OperationalStatus.REMOTE_ID_FAILURE:
+        if drone.status == OperationalStatus.REMOTE_ID_FAILURE:
             return "malfunction"
-        else:
-            return "unknown"
+        return "unknown"
 
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""

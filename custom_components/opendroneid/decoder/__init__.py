@@ -5,10 +5,10 @@ Implements decoding of ASTM F3411-22a / ASD-STAN prEN 4709-002 messages.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntEnum
-from typing import Final
 import struct
+from typing import Final
 
 # Message type constants
 MSG_TYPE_BASIC_ID: Final = 0x00
@@ -19,9 +19,11 @@ MSG_TYPE_SYSTEM: Final = 0x04
 MSG_TYPE_OPERATOR_ID: Final = 0x05
 MSG_TYPE_MESSAGE_PACK: Final = 0x0F
 
+
 # ID types (Basic ID)
 class IDType(IntEnum):
     """UAS ID type."""
+
     NONE = 0
     SERIAL_NUMBER = 1
     CAA_REGISTRATION = 2
@@ -31,6 +33,7 @@ class IDType(IntEnum):
 
 class UAType(IntEnum):
     """UA (Unmanned Aircraft) type."""
+
     NONE = 0
     AEROPLANE = 1
     HELICOPTER = 2
@@ -51,6 +54,7 @@ class UAType(IntEnum):
 
 class OperationalStatus(IntEnum):
     """Operational status."""
+
     UNDECLARED = 0
     GROUND = 1
     AIRBORNE = 2
@@ -60,6 +64,7 @@ class OperationalStatus(IntEnum):
 
 class HeightType(IntEnum):
     """Height reference type."""
+
     ABOVE_TAKEOFF = 0
     AGL = 1  # Above Ground Level
 
@@ -169,7 +174,7 @@ class OpenDroneIDDecoder:
 
     # Speed encoding
     SPEED_H_SCALE: Final = 0.25  # m/s per unit (0-254 * 0.25)
-    SPEED_V_SCALE: Final = 0.5   # m/s per unit
+    SPEED_V_SCALE: Final = 0.5  # m/s per unit
 
     # Invalid values
     INVALID_LAT_LON: Final = 0
@@ -197,7 +202,9 @@ class OpenDroneIDDecoder:
 
         return counter, message
 
-    def decode_message(self, data: bytes) -> BasicIDMessage | LocationMessage | SystemMessage | OperatorIDMessage | None:
+    def decode_message(
+        self, data: bytes
+    ) -> BasicIDMessage | LocationMessage | SystemMessage | OperatorIDMessage | None:
         """Decode a 25-byte OpenDroneID message."""
         if len(data) < 25:
             return None
@@ -206,11 +213,11 @@ class OpenDroneIDDecoder:
 
         if msg_type == MSG_TYPE_BASIC_ID:
             return self._decode_basic_id(data)
-        elif msg_type == MSG_TYPE_LOCATION:
+        if msg_type == MSG_TYPE_LOCATION:
             return self._decode_location(data)
-        elif msg_type == MSG_TYPE_SYSTEM:
+        if msg_type == MSG_TYPE_SYSTEM:
             return self._decode_system(data)
-        elif msg_type == MSG_TYPE_OPERATOR_ID:
+        if msg_type == MSG_TYPE_OPERATOR_ID:
             return self._decode_operator_id(data)
 
         return None
@@ -227,7 +234,7 @@ class OpenDroneIDDecoder:
 
         # Bytes 2-21: UAS ID (20 characters, null-terminated ASCII)
         uas_id_bytes = data[2:22]
-        msg.uas_id = uas_id_bytes.rstrip(b'\x00').decode('ascii', errors='replace')
+        msg.uas_id = uas_id_bytes.rstrip(b"\x00").decode("ascii", errors="replace")
 
         return msg
 
@@ -264,27 +271,27 @@ class OpenDroneIDDecoder:
                 msg.speed_vertical = (vs_raw - 62) * self.SPEED_V_SCALE
 
         # Bytes 5-8: Latitude (int32, little-endian, *1e-7 degrees)
-        lat_raw = struct.unpack('<i', data[5:9])[0]
+        lat_raw = struct.unpack("<i", data[5:9])[0]
         if lat_raw != self.INVALID_LAT_LON:
             msg.latitude = lat_raw * self.LAT_LON_SCALE
 
         # Bytes 9-12: Longitude (int32, little-endian, *1e-7 degrees)
-        lon_raw = struct.unpack('<i', data[9:13])[0]
+        lon_raw = struct.unpack("<i", data[9:13])[0]
         if lon_raw != self.INVALID_LAT_LON:
             msg.longitude = lon_raw * self.LAT_LON_SCALE
 
         # Bytes 13-14: Pressure altitude (uint16, little-endian)
-        alt_baro_raw = struct.unpack('<H', data[13:15])[0]
+        alt_baro_raw = struct.unpack("<H", data[13:15])[0]
         if alt_baro_raw != self.INVALID_ALT:
             msg.altitude_baro = alt_baro_raw * self.ALT_SCALE + self.ALT_OFFSET
 
         # Bytes 15-16: Geodetic altitude (uint16, little-endian)
-        alt_geo_raw = struct.unpack('<H', data[15:17])[0]
+        alt_geo_raw = struct.unpack("<H", data[15:17])[0]
         if alt_geo_raw != self.INVALID_ALT:
             msg.altitude_geo = alt_geo_raw * self.ALT_SCALE + self.ALT_OFFSET
 
         # Bytes 17-18: Height (uint16, little-endian)
-        height_raw = struct.unpack('<H', data[17:19])[0]
+        height_raw = struct.unpack("<H", data[17:19])[0]
         if height_raw != self.INVALID_ALT:
             msg.height = height_raw * self.ALT_SCALE + self.ALT_OFFSET
 
@@ -299,7 +306,7 @@ class OpenDroneIDDecoder:
         msg.speed_accuracy = accuracy2 & 0x0F
 
         # Bytes 21-22: Timestamp (uint16, 0.1s resolution since hour)
-        ts_raw = struct.unpack('<H', data[21:23])[0]
+        ts_raw = struct.unpack("<H", data[21:23])[0]
         if ts_raw != 0xFFFF:
             msg.timestamp = ts_raw * 0.1
 
@@ -317,28 +324,28 @@ class OpenDroneIDDecoder:
         msg.classification_type = data[0] & 0x03
 
         # Bytes 1-4: Operator latitude
-        lat_raw = struct.unpack('<i', data[1:5])[0]
+        lat_raw = struct.unpack("<i", data[1:5])[0]
         if lat_raw != 0:
             msg.operator_latitude = lat_raw * self.LAT_LON_SCALE
 
         # Bytes 5-8: Operator longitude
-        lon_raw = struct.unpack('<i', data[5:9])[0]
+        lon_raw = struct.unpack("<i", data[5:9])[0]
         if lon_raw != 0:
             msg.operator_longitude = lon_raw * self.LAT_LON_SCALE
 
         # Bytes 9-10: Area count
-        msg.area_count = struct.unpack('<H', data[9:11])[0]
+        msg.area_count = struct.unpack("<H", data[9:11])[0]
 
         # Byte 11: Area radius (10m units)
         msg.area_radius = data[11] * 10.0
 
         # Bytes 12-13: Area ceiling
-        ceiling_raw = struct.unpack('<H', data[12:14])[0]
+        ceiling_raw = struct.unpack("<H", data[12:14])[0]
         if ceiling_raw != self.INVALID_ALT:
             msg.area_ceiling = ceiling_raw * self.ALT_SCALE + self.ALT_OFFSET
 
         # Bytes 14-15: Area floor
-        floor_raw = struct.unpack('<H', data[14:16])[0]
+        floor_raw = struct.unpack("<H", data[14:16])[0]
         if floor_raw != self.INVALID_ALT:
             msg.area_floor = floor_raw * self.ALT_SCALE + self.ALT_OFFSET
 
@@ -347,7 +354,7 @@ class OpenDroneIDDecoder:
         msg.ua_classification_class = data[16] & 0x0F
 
         # Bytes 17-18: Operator altitude
-        alt_raw = struct.unpack('<H', data[17:19])[0]
+        alt_raw = struct.unpack("<H", data[17:19])[0]
         if alt_raw != self.INVALID_ALT:
             msg.operator_altitude_geo = alt_raw * self.ALT_SCALE + self.ALT_OFFSET
 
@@ -362,6 +369,6 @@ class OpenDroneIDDecoder:
 
         # Bytes 1-20: Operator ID (20 characters, null-terminated ASCII)
         op_id_bytes = data[1:21]
-        msg.operator_id = op_id_bytes.rstrip(b'\x00').decode('ascii', errors='replace')
+        msg.operator_id = op_id_bytes.rstrip(b"\x00").decode("ascii", errors="replace")
 
         return msg
