@@ -61,6 +61,7 @@ ignore = [
     "PLR0913", # Too many arguments
     "PLR2004", # Magic value comparison
     "TRY003", # Avoid specifying long messages outside the exception class
+    "TRY300", # Consider moving statement to else block (stylistic preference)
     "TID252", # Prefer relative imports for Home Assistant custom components
     "UP040",  # Use TypeAlias for Python 3.11 compatibility
 ]

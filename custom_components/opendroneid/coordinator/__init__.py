@@ -136,25 +136,55 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         if self._dragonsync_enabled and self._dragonsync_host:
             await self._setup_dragonsync()
 
-    async def _setup_dragonsync(self) -> None:
-        """Set up ZMQ connection to DragonSync."""
+    def _setup_dragonsync_sync(self) -> tuple[Any, Any, str] | None:
+        """Set up ZMQ connection to DragonSync (synchronous part).
+
+        This runs in an executor to avoid blocking the event loop.
+        Returns (context, socket, url) on success, None on failure.
+        """
         try:
             import zmq  # noqa: PLC0415
 
-            self._zmq_context = zmq.Context()
-            self._zmq_socket = self._zmq_context.socket(zmq.PUB)
+            context = zmq.Context()
+            socket = context.socket(zmq.PUB)
             zmq_url = f"tcp://{self._dragonsync_host}:{self._dragonsync_port}"
-            self._zmq_socket.connect(zmq_url)
-            _LOGGER.info("DragonSync ZMQ connected to %s", zmq_url)
+            socket.connect(zmq_url)
+
+            # Set socket to non-blocking mode to avoid blocking the event loop
+            # when sending messages from callbacks
+            socket.setsockopt(zmq.SNDHWM, 1000)  # High water mark: drop old messages
+            socket.setsockopt(zmq.LINGER, 0)  # Don't wait on close
+
+            return (context, socket, zmq_url)
         except ImportError:
             _LOGGER.exception(
                 "pyzmq not installed. DragonSync forwarding disabled. "
                 "Install with: pip install pyzmq"
             )
-            self._dragonsync_enabled = False
+            return None
         except OSError:
             _LOGGER.exception("Failed to connect to DragonSync")
+            return None
+
+    async def _setup_dragonsync(self) -> None:
+        """Set up ZMQ connection to DragonSync."""
+        result = await self.hass.async_add_executor_job(self._setup_dragonsync_sync)
+
+        if result:
+            self._zmq_context, self._zmq_socket, zmq_url = result
+            _LOGGER.info("DragonSync ZMQ connected to %s", zmq_url)
+        else:
             self._dragonsync_enabled = False
+
+    def _shutdown_zmq_sync(self) -> None:
+        """Shut down ZMQ connection (synchronous part).
+
+        This runs in an executor to avoid blocking the event loop.
+        """
+        if self._zmq_socket:
+            self._zmq_socket.close()
+        if self._zmq_context:
+            self._zmq_context.term()
 
     async def async_shutdown(self) -> None:
         """Shut down the coordinator."""
@@ -163,12 +193,10 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
             self._cancel_bluetooth_callback = None
             _LOGGER.debug("OpenDroneID BLE scanning stopped")
 
-        # Close ZMQ connection
-        if self._zmq_socket:
-            self._zmq_socket.close()
+        # Close ZMQ connection in executor to avoid blocking
+        if self._zmq_socket or self._zmq_context:
+            await self.hass.async_add_executor_job(self._shutdown_zmq_sync)
             self._zmq_socket = None
-        if self._zmq_context:
-            self._zmq_context.term()
             self._zmq_context = None
             _LOGGER.debug("DragonSync ZMQ connection closed")
 
@@ -305,8 +333,11 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         """Send drone data to DragonSync via ZMQ.
 
         Formats data in the structure expected by DragonSync's telemetry parser.
+        Uses non-blocking send to avoid blocking the event loop.
         """
         try:
+            import zmq  # noqa: PLC0415
+
             # Build message in DragonSync format
             zmq_message: dict[str, Any] = {}
 
@@ -355,13 +386,22 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
                     "operator_lon": drone.operator_longitude or 0.0,
                 }
 
-            # Send via ZMQ
+            # Send via ZMQ with NOBLOCK flag to avoid blocking the event loop
             if zmq_message:
-                self._zmq_socket.send_json(zmq_message)
+                self._zmq_socket.send_json(zmq_message, flags=zmq.NOBLOCK)
                 _LOGGER.debug(
                     "Sent to DragonSync: %s", drone.uas_id or drone.source_address
                 )
 
+        except ImportError:
+            # This shouldn't happen since we check during setup, but handle it anyway
+            _LOGGER.warning("zmq not available, cannot send to DragonSync")
+        except zmq.Again:  # type: ignore[name-defined]
+            # Send buffer full - message dropped (this is OK for telemetry)
+            _LOGGER.debug(
+                "DragonSync send buffer full, dropping message for %s",
+                drone.uas_id or drone.source_address,
+            )
         except (OSError, ValueError, TypeError):
             _LOGGER.exception("Failed to send to DragonSync")
 
