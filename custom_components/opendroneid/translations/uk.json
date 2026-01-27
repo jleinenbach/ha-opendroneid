@@ -5,10 +5,16 @@
         "title": "Налаштувати приймач OpenDroneID BLE",
         "description": "Ця інтеграція виявляє дрони, що передають BLE Remote ID, використовуючи ваші існуючі Bluetooth-проксі ESPHome.\n\n{ble_info}",
         "data": {
-          "inactive_timeout": "Тайм-аут неактивності"
+          "inactive_timeout": "Тайм-аут неактивності",
+          "dragonsync_enabled": "Увімкнути пересилання до DragonSync",
+          "dragonsync_host": "Хост DragonSync",
+          "dragonsync_port": "Порт DragonSync"
         },
         "data_description": {
-          "inactive_timeout": "Час у секундах до того, як дрон буде вважатися неактивним і видаленим"
+          "inactive_timeout": "Час у секундах до того, як дрон буде вважатися неактивним і видаленим",
+          "dragonsync_enabled": "Пересилати дані дрона до DragonSync через ZMQ",
+          "dragonsync_host": "IP-адреса або ім'я хоста сервера DragonSync",
+          "dragonsync_port": "Порт ZMQ для DragonSync (за замовчуванням: 4224)"
         }
       }
     },
@@ -24,10 +30,16 @@
       "init": {
         "title": "Параметри OpenDroneID",
         "data": {
-          "inactive_timeout": "Тайм-аут неактивності"
+          "inactive_timeout": "Тайм-аут неактивності",
+          "dragonsync_enabled": "Увімкнути пересилання до DragonSync",
+          "dragonsync_host": "Хост DragonSync",
+          "dragonsync_port": "Порт DragonSync"
         },
         "data_description": {
-          "inactive_timeout": "Час у секундах до того, як дрон буде вважатися неактивним і видаленим"
+          "inactive_timeout": "Час у секундах до того, як дрон буде вважатися неактивним і видаленим",
+          "dragonsync_enabled": "Пересилати дані дрона до DragonSync через ZMQ",
+          "dragonsync_host": "IP-адреса або ім'я хоста сервера DragonSync",
+          "dragonsync_port": "Порт ZMQ для DragonSync (за замовчуванням: 4224)"
         }
       }
     }

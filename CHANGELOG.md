@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-27
+
+### Added
+
+- DragonSync integration via ZMQ
+- Configurable DragonSync host and port
+- Forward drone data to DragonSync web map
+- pyzmq dependency for ZMQ communication
+
 ## [0.1.0] - 2026-01-27
 
 ### Added

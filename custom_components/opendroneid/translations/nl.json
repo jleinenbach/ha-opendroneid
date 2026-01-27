@@ -5,10 +5,16 @@
         "title": "OpenDroneID BLE-ontvanger instellen",
         "description": "Deze integratie detecteert drones die BLE Remote ID uitzenden via uw bestaande ESPHome Bluetooth-proxies.\n\n{ble_info}",
         "data": {
-          "inactive_timeout": "Inactiviteitstime-out"
+          "inactive_timeout": "Inactiviteitstime-out",
+          "dragonsync_enabled": "DragonSync-doorsturen inschakelen",
+          "dragonsync_host": "DragonSync-host",
+          "dragonsync_port": "DragonSync-poort"
         },
         "data_description": {
-          "inactive_timeout": "Tijd in seconden voordat een drone als inactief wordt beschouwd en wordt verwijderd"
+          "inactive_timeout": "Tijd in seconden voordat een drone als inactief wordt beschouwd en wordt verwijderd",
+          "dragonsync_enabled": "Dronegegevens doorsturen naar DragonSync via ZMQ",
+          "dragonsync_host": "IP-adres of hostnaam van de DragonSync-server",
+          "dragonsync_port": "ZMQ-poort voor DragonSync (standaard: 4224)"
         }
       }
     },
@@ -24,10 +30,16 @@
       "init": {
         "title": "OpenDroneID Opties",
         "data": {
-          "inactive_timeout": "Inactiviteitstime-out"
+          "inactive_timeout": "Inactiviteitstime-out",
+          "dragonsync_enabled": "DragonSync-doorsturen inschakelen",
+          "dragonsync_host": "DragonSync-host",
+          "dragonsync_port": "DragonSync-poort"
         },
         "data_description": {
-          "inactive_timeout": "Tijd in seconden voordat een drone als inactief wordt beschouwd en wordt verwijderd"
+          "inactive_timeout": "Tijd in seconden voordat een drone als inactief wordt beschouwd en wordt verwijderd",
+          "dragonsync_enabled": "Dronegegevens doorsturen naar DragonSync via ZMQ",
+          "dragonsync_host": "IP-adres of hostnaam van de DragonSync-server",
+          "dragonsync_port": "ZMQ-poort voor DragonSync (standaard: 4224)"
         }
       }
     }

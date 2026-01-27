@@ -5,10 +5,16 @@
         "title": "Set up OpenDroneID BLE Receiver",
         "description": "This integration detects drones transmitting BLE Remote ID using your existing ESPHome Bluetooth proxies.\n\n{ble_info}",
         "data": {
-          "inactive_timeout": "Inactive timeout"
+          "inactive_timeout": "Inactive timeout",
+          "dragonsync_enabled": "Enable DragonSync forwarding",
+          "dragonsync_host": "DragonSync host",
+          "dragonsync_port": "DragonSync port"
         },
         "data_description": {
-          "inactive_timeout": "Time in seconds before a drone is considered inactive and removed"
+          "inactive_timeout": "Time in seconds before a drone is considered inactive and removed",
+          "dragonsync_enabled": "Forward drone data to DragonSync via ZMQ",
+          "dragonsync_host": "IP address or hostname of the DragonSync server",
+          "dragonsync_port": "ZMQ port for DragonSync (default: 4224)"
         }
       }
     },
@@ -24,10 +30,16 @@
       "init": {
         "title": "OpenDroneID Options",
         "data": {
-          "inactive_timeout": "Inactive timeout"
+          "inactive_timeout": "Inactive timeout",
+          "dragonsync_enabled": "Enable DragonSync forwarding",
+          "dragonsync_host": "DragonSync host",
+          "dragonsync_port": "DragonSync port"
         },
         "data_description": {
-          "inactive_timeout": "Time in seconds before a drone is considered inactive and removed"
+          "inactive_timeout": "Time in seconds before a drone is considered inactive and removed",
+          "dragonsync_enabled": "Forward drone data to DragonSync via ZMQ",
+          "dragonsync_host": "IP address or hostname of the DragonSync server",
+          "dragonsync_port": "ZMQ port for DragonSync (default: 4224)"
         }
       }
     }

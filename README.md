@@ -64,6 +64,13 @@ That's it! The integration will automatically use all available Bluetooth adapte
 | Option | Default | Description |
 |--------|---------|-------------|
 | Inactive Timeout | 120s | Time before a drone is removed after losing signal |
+| DragonSync Enabled | Off | Forward drone data to DragonSync via ZMQ |
+| DragonSync Host | - | IP address or hostname of DragonSync server |
+| DragonSync Port | 4224 | ZMQ port for DragonSync |
+
+### DragonSync Integration
+
+If you have [DragonSync](https://github.com/alphafox02/DragonSync) running, you can forward all detected drone data to its web map. Enable "DragonSync forwarding" and enter your DragonSync server's IP address (e.g., `192.168.1.100`).
 
 ## Entities Created
 

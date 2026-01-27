@@ -5,10 +5,16 @@
         "title": "Configurar receptor OpenDroneID BLE",
         "description": "Esta integración detecta drones que transmiten Remote ID BLE utilizando sus proxies Bluetooth ESPHome existentes.\n\n{ble_info}",
         "data": {
-          "inactive_timeout": "Tiempo de espera por inactividad"
+          "inactive_timeout": "Tiempo de espera por inactividad",
+          "dragonsync_enabled": "Habilitar reenvío a DragonSync",
+          "dragonsync_host": "Host de DragonSync",
+          "dragonsync_port": "Puerto de DragonSync"
         },
         "data_description": {
-          "inactive_timeout": "Tiempo en segundos antes de que un dron se considere inactivo y se elimine"
+          "inactive_timeout": "Tiempo en segundos antes de que un dron se considere inactivo y se elimine",
+          "dragonsync_enabled": "Reenviar datos del dron a DragonSync a través de ZMQ",
+          "dragonsync_host": "Dirección IP o nombre de host del servidor DragonSync",
+          "dragonsync_port": "Puerto ZMQ para DragonSync (predeterminado: 4224)"
         }
       }
     },
@@ -24,10 +30,16 @@
       "init": {
         "title": "Opciones de OpenDroneID",
         "data": {
-          "inactive_timeout": "Tiempo de espera por inactividad"
+          "inactive_timeout": "Tiempo de espera por inactividad",
+          "dragonsync_enabled": "Habilitar reenvío a DragonSync",
+          "dragonsync_host": "Host de DragonSync",
+          "dragonsync_port": "Puerto de DragonSync"
         },
         "data_description": {
-          "inactive_timeout": "Tiempo en segundos antes de que un dron se considere inactivo y se elimine"
+          "inactive_timeout": "Tiempo en segundos antes de que un dron se considere inactivo y se elimine",
+          "dragonsync_enabled": "Reenviar datos del dron a DragonSync a través de ZMQ",
+          "dragonsync_host": "Dirección IP o nombre de host del servidor DragonSync",
+          "dragonsync_port": "Puerto ZMQ para DragonSync (predeterminado: 4224)"
         }
       }
     }

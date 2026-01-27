@@ -26,3 +26,10 @@ DEFAULT_INACTIVE_TIMEOUT: Final = 120  # seconds
 # Configuration keys
 CONF_ESPHOME_PROXIES: Final = "esphome_proxies"
 CONF_INACTIVE_TIMEOUT: Final = "inactive_timeout"
+
+# DragonSync configuration
+CONF_DRAGONSYNC_ENABLED: Final = "dragonsync_enabled"
+CONF_DRAGONSYNC_HOST: Final = "dragonsync_host"
+CONF_DRAGONSYNC_PORT: Final = "dragonsync_port"
+DEFAULT_DRAGONSYNC_HOST: Final = ""
+DEFAULT_DRAGONSYNC_PORT: Final = 4224

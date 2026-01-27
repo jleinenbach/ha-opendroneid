@@ -19,13 +19,22 @@ from homeassistant.config_entries import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 
 from .const import (
+    CONF_DRAGONSYNC_ENABLED,
+    CONF_DRAGONSYNC_HOST,
+    CONF_DRAGONSYNC_PORT,
     CONF_INACTIVE_TIMEOUT,
+    DEFAULT_DRAGONSYNC_HOST,
+    DEFAULT_DRAGONSYNC_PORT,
     DEFAULT_INACTIVE_TIMEOUT,
     DOMAIN,
 )
@@ -37,7 +46,7 @@ class OpenDroneIDConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for OpenDroneID BLE Receiver."""
 
     VERSION = 1
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     async def async_step_user(
         self,
@@ -60,6 +69,15 @@ class OpenDroneIDConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_INACTIVE_TIMEOUT: user_input.get(
                         CONF_INACTIVE_TIMEOUT, DEFAULT_INACTIVE_TIMEOUT
                     ),
+                    CONF_DRAGONSYNC_ENABLED: user_input.get(
+                        CONF_DRAGONSYNC_ENABLED, False
+                    ),
+                    CONF_DRAGONSYNC_HOST: user_input.get(
+                        CONF_DRAGONSYNC_HOST, DEFAULT_DRAGONSYNC_HOST
+                    ),
+                    CONF_DRAGONSYNC_PORT: user_input.get(
+                        CONF_DRAGONSYNC_PORT, DEFAULT_DRAGONSYNC_PORT
+                    ),
                 },
             )
 
@@ -77,6 +95,28 @@ class OpenDroneIDConfigFlow(ConfigFlow, domain=DOMAIN):
                             step=10,
                             unit_of_measurement="seconds",
                             mode=NumberSelectorMode.SLIDER,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_DRAGONSYNC_ENABLED,
+                        default=False,
+                    ): BooleanSelector(),
+                    vol.Optional(
+                        CONF_DRAGONSYNC_HOST,
+                        default=DEFAULT_DRAGONSYNC_HOST,
+                    ): TextSelector(
+                        TextSelectorConfig(
+                            type=TextSelectorType.TEXT,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_DRAGONSYNC_PORT,
+                        default=DEFAULT_DRAGONSYNC_PORT,
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1024,
+                            max=65535,
+                            mode=NumberSelectorMode.BOX,
                         )
                     ),
                 }
@@ -123,6 +163,34 @@ class OpenDroneIDOptionsFlow(OptionsFlow):
                             step=10,
                             unit_of_measurement="seconds",
                             mode=NumberSelectorMode.SLIDER,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_DRAGONSYNC_ENABLED,
+                        default=self.config_entry.options.get(
+                            CONF_DRAGONSYNC_ENABLED, False
+                        ),
+                    ): BooleanSelector(),
+                    vol.Optional(
+                        CONF_DRAGONSYNC_HOST,
+                        default=self.config_entry.options.get(
+                            CONF_DRAGONSYNC_HOST, DEFAULT_DRAGONSYNC_HOST
+                        ),
+                    ): TextSelector(
+                        TextSelectorConfig(
+                            type=TextSelectorType.TEXT,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_DRAGONSYNC_PORT,
+                        default=self.config_entry.options.get(
+                            CONF_DRAGONSYNC_PORT, DEFAULT_DRAGONSYNC_PORT
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1024,
+                            max=65535,
+                            mode=NumberSelectorMode.BOX,
                         )
                     ),
                 }
