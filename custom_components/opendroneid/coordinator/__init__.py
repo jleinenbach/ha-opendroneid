@@ -391,8 +391,3 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
             self.async_set_updated_data(self.data)
 
         return removed
-
-    @property
-    def last_update_success(self) -> bool:
-        """Return True since BLE scanning is always 'successful'."""
-        return True
