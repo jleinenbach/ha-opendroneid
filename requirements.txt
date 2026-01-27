@@ -1,0 +1,2 @@
+# Runtime dependencies
+aiohttp>=3.9.0

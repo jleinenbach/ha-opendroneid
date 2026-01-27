@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# script/check - Run all validation checks
+#
+# Usage: ./script/check
+#
+# This script runs ALL checks required before committing:
+# - Ruff formatting
+# - Ruff linting
+# - Pyright type checking
+# - mypy --strict
+# - pytest
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+echo "=============================================="
+echo "Running all validation checks..."
+echo "=============================================="
+echo ""
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+FAILED=0
+
+# 1. Ruff Format
+echo -e "${YELLOW}[1/5] Ruff Format...${NC}"
+if ruff format --check . 2>/dev/null; then
+    echo -e "${GREEN}✓ Ruff format passed${NC}"
+else
+    echo -e "${RED}✗ Ruff format failed${NC}"
+    echo "  Run: ruff format ."
+    FAILED=1
+fi
+echo ""
+
+# 2. Ruff Lint
+echo -e "${YELLOW}[2/5] Ruff Lint...${NC}"
+if ruff check . 2>/dev/null; then
+    echo -e "${GREEN}✓ Ruff lint passed${NC}"
+else
+    echo -e "${RED}✗ Ruff lint failed${NC}"
+    echo "  Run: ruff check --fix ."
+    FAILED=1
+fi
+echo ""
+
+# 3. Pyright
+echo -e "${YELLOW}[3/5] Pyright Type Checking...${NC}"
+if pyright . 2>/dev/null; then
+    echo -e "${GREEN}✓ Pyright passed${NC}"
+else
+    echo -e "${RED}✗ Pyright failed${NC}"
+    FAILED=1
+fi
+echo ""
+
+# 4. mypy --strict
+echo -e "${YELLOW}[4/5] mypy --strict...${NC}"
+if mypy --strict --ignore-missing-imports custom_components/ 2>/dev/null; then
+    echo -e "${GREEN}✓ mypy --strict passed${NC}"
+else
+    echo -e "${RED}✗ mypy --strict failed${NC}"
+    FAILED=1
+fi
+echo ""
+
+# 5. pytest
+echo -e "${YELLOW}[5/5] pytest...${NC}"
+if pytest --cov=custom_components --cov-fail-under=95 -q 2>/dev/null; then
+    echo -e "${GREEN}✓ Tests passed with >95% coverage${NC}"
+else
+    echo -e "${RED}✗ Tests failed or coverage <95%${NC}"
+    FAILED=1
+fi
+echo ""
+
+echo "=============================================="
+if [ $FAILED -eq 0 ]; then
+    echo -e "${GREEN}✓ All checks passed!${NC}"
+    exit 0
+else
+    echo -e "${RED}✗ Some checks failed${NC}"
+    exit 1
+fi

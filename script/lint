@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# script/lint - Format and lint code with Ruff
+#
+# Usage: ./script/lint [--check]
+#
+# Without arguments: Auto-fix formatting and linting issues
+# With --check: Only check, don't fix (for CI)
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+CHECK_ONLY=0
+if [[ "${1:-}" == "--check" ]]; then
+    CHECK_ONLY=1
+fi
+
+echo "=============================================="
+echo "Ruff Linting & Formatting"
+echo "=============================================="
+echo ""
+
+if [ $CHECK_ONLY -eq 1 ]; then
+    echo "Mode: Check only (no auto-fix)"
+    echo ""
+    
+    echo "[1/2] Checking format..."
+    ruff format --check --diff .
+    
+    echo ""
+    echo "[2/2] Checking lint..."
+    ruff check --output-format=github .
+else
+    echo "Mode: Auto-fix enabled"
+    echo ""
+    
+    echo "[1/2] Formatting with ruff format..."
+    ruff format .
+    
+    echo ""
+    echo "[2/2] Linting with ruff check --fix..."
+    ruff check --fix .
+fi
+
+echo ""
+echo "=============================================="
+echo "✓ Linting complete"
+echo "=============================================="

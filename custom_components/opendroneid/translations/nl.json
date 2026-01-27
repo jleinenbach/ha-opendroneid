@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenDroneID BLE-ontvanger instellen",
+        "description": "Deze integratie detecteert drones die BLE Remote ID uitzenden via uw bestaande ESPHome Bluetooth-proxies.\n\n{ble_info}",
+        "data": {
+          "inactive_timeout": "Inactiviteitstime-out"
+        },
+        "data_description": {
+          "inactive_timeout": "Tijd in seconden voordat een drone als inactief wordt beschouwd en wordt verwijderd"
+        }
+      }
+    },
+    "error": {
+      "unknown": "Er is een onverwachte fout opgetreden. Controleer de logboeken."
+    },
+    "abort": {
+      "already_configured": "OpenDroneID is al geconfigureerd. Er is slechts één instantie nodig."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OpenDroneID Opties",
+        "data": {
+          "inactive_timeout": "Inactiviteitstime-out"
+        },
+        "data_description": {
+          "inactive_timeout": "Tijd in seconden voordat een drone als inactief wordt beschouwd en wordt verwijderd"
+        }
+      }
+    }
+  },
+  "entity": {
+    "device_tracker": {
+      "drone": {
+        "name": "Drone"
+      }
+    }
+  },
+  "exceptions": {
+    "setup_failed": {
+      "message": "OpenDroneID instellen is mislukt. Controleer of Bluetooth beschikbaar is."
+    }
+  }
+}

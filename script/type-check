@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# script/type-check - Run type checking with Pyright and mypy
+#
+# Usage: ./script/type-check
+#
+# Runs BOTH type checkers (required for Platinum quality):
+# - Pyright (primary)
+# - mypy --strict (additional strict checking)
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+echo "=============================================="
+echo "Type Checking (Pyright + mypy --strict)"
+echo "=============================================="
+echo ""
+
+FAILED=0
+
+# 1. Pyright
+echo "[1/2] Running Pyright..."
+if pyright .; then
+    echo "✓ Pyright passed"
+else
+    echo "✗ Pyright failed"
+    FAILED=1
+fi
+echo ""
+
+# 2. mypy --strict
+echo "[2/2] Running mypy --strict..."
+if mypy --strict \
+    --python-version 3.13 \
+    --ignore-missing-imports \
+    --show-error-codes \
+    --pretty \
+    custom_components/; then
+    echo "✓ mypy --strict passed"
+else
+    echo "✗ mypy --strict failed"
+    FAILED=1
+fi
+echo ""
+
+echo "=============================================="
+if [ $FAILED -eq 0 ]; then
+    echo "✓ All type checks passed!"
+    exit 0
+else
+    echo "✗ Type checking failed"
+    exit 1
+fi

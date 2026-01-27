@@ -1,0 +1,317 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+  schedule:
+    # Run daily at midnight UTC
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DEFAULT_PYTHON: "3.13"
+  MIN_HA_VERSION: "2026.1.0"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================
+  # Code Quality: Ruff Format Check
+  # ============================================================
+  ruff-format:
+    name: Ruff Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Ruff formatter check
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check --diff"
+
+  # ============================================================
+  # Code Quality: Ruff Linting
+  # ============================================================
+  ruff-lint:
+    name: Ruff Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Ruff linter
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check --output-format=github"
+
+  # ============================================================
+  # Type Checking: Pyright (Strict)
+  # ============================================================
+  pyright:
+    name: Pyright
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -r requirements.txt
+          uv pip install --system -r requirements_dev.txt
+
+      - name: Run Pyright
+        uses: jakebailey/pyright-action@v2
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          warnings: true
+
+  # ============================================================
+  # Type Checking: mypy --strict (MANDATORY)
+  # ============================================================
+  mypy:
+    name: mypy --strict
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -r requirements.txt
+          uv pip install --system -r requirements_dev.txt
+          uv pip install --system mypy
+
+      - name: Run mypy --strict
+        run: |
+          mypy --strict \
+            --python-version 3.13 \
+            --ignore-missing-imports \
+            --no-error-summary \
+            custom_components/
+
+  # ============================================================
+  # HACS Validation
+  # ============================================================
+  hacs:
+    name: HACS Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
+  # ============================================================
+  # Hassfest Validation (Home Assistant manifest)
+  # ============================================================
+  hassfest:
+    name: Hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Hassfest validation
+        uses: home-assistant/actions/hassfest@master
+
+  # ============================================================
+  # Tests with Coverage (>95% required)
+  # ============================================================
+  tests:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.13"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -r requirements.txt
+          uv pip install --system -r requirements_test.txt
+
+      - name: Run tests with coverage
+        run: |
+          pytest \
+            --cov=custom_components \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=95 \
+            --cov-branch \
+            -v
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  # ============================================================
+  # Integration Test with Home Assistant
+  # ============================================================
+  ha-integration:
+    name: HA Integration Test
+    runs-on: ubuntu-latest
+    needs: [ruff-format, ruff-lint, pyright, mypy, hacs, hassfest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Home Assistant
+        run: |
+          uv pip install --system homeassistant==${{ env.MIN_HA_VERSION }}
+
+      - name: Install integration dependencies
+        run: |
+          uv pip install --system -r requirements.txt
+
+      - name: Verify integration loads
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from custom_components.opendroneid import DOMAIN
+          print(f'✓ Integration domain: {DOMAIN}')
+          print('✓ Integration module loads successfully')
+          "
+
+  # ============================================================
+  # Quality Scale Compliance Check
+  # ============================================================
+  quality-scale:
+    name: Quality Scale Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Check quality_scale.yaml exists
+        run: |
+          if [ ! -f "custom_components/opendroneid/quality_scale.yaml" ]; then
+            echo "❌ quality_scale.yaml not found!"
+            echo "   This file is REQUIRED for tracking Quality Scale compliance."
+            exit 1
+          fi
+          echo "✓ quality_scale.yaml found"
+
+      - name: Validate quality_scale.yaml
+        run: |
+          python -c "
+          import yaml
+          import sys
+          
+          with open('custom_components/opendroneid/quality_scale.yaml', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          if 'rules' not in data:
+              print('❌ quality_scale.yaml must have a \"rules\" section')
+              sys.exit(1)
+          
+          required_platinum_rules = ['async-dependency', 'inject-websession', 'strict-typing']
+          
+          for rule in required_platinum_rules:
+              if rule not in data['rules']:
+                  print(f'❌ Missing Platinum rule: {rule}')
+                  sys.exit(1)
+          
+          # Count status
+          done_count = sum(1 for r in data['rules'].values() if r.get('status') == 'done')
+          total_count = len(data['rules'])
+          
+          print(f'✓ quality_scale.yaml is valid')
+          print(f'  Progress: {done_count}/{total_count} rules completed')
+          "
+
+  # ============================================================
+  # All Checks Summary
+  # ============================================================
+  all-checks:
+    name: All Checks Passed
+    runs-on: ubuntu-latest
+    needs:
+      - ruff-format
+      - ruff-lint
+      - pyright
+      - mypy
+      - hacs
+      - hassfest
+      - tests
+      - ha-integration
+      - quality-scale
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.ruff-format.result }}" != "success" ]] || \
+             [[ "${{ needs.ruff-lint.result }}" != "success" ]] || \
+             [[ "${{ needs.pyright.result }}" != "success" ]] || \
+             [[ "${{ needs.mypy.result }}" != "success" ]] || \
+             [[ "${{ needs.hacs.result }}" != "success" ]] || \
+             [[ "${{ needs.hassfest.result }}" != "success" ]] || \
+             [[ "${{ needs.tests.result }}" != "success" ]] || \
+             [[ "${{ needs.ha-integration.result }}" != "success" ]] || \
+             [[ "${{ needs.quality-scale.result }}" != "success" ]]; then
+            echo "❌ One or more checks failed"
+            exit 1
+          fi
+          echo "✓ All checks passed!"

@@ -1,0 +1,296 @@
+# Home Assistant Integration Quality Scale Tracking
+# https://developers.home-assistant.io/docs/core/integration-quality-scale/
+#
+# ⚠️ AI AGENTS: This file MUST be updated when implementing features!
+#    - Change status from 'todo' to 'done' when implemented
+#    - Add a comment explaining how the rule is satisfied
+#    - Never mark as 'done' without actual implementation
+#
+# Status values:
+#   - todo: Not yet implemented
+#   - done: Implemented and tested
+#   - exempt: Not applicable to this integration (add reason)
+
+domain: your_domain
+target_tier: platinum
+
+# Track last update for AI agents
+last_updated: "2026-01-18"
+updated_by: "template"
+
+rules:
+  # ============================================================
+  # BRONZE TIER (18 rules) - Basic Quality
+  # ============================================================
+  
+  # Bronze: Configuration
+  config-flow:
+    status: done
+    comment: "config_flow.py implements ConfigFlow with user step"
+    file: config_flow.py
+    
+  config-flow-test-coverage:
+    status: todo
+    comment: "Need 100% test coverage for config_flow.py"
+    file: tests/test_config_flow.py
+    
+  test-before-configure:
+    status: done
+    comment: "Config flow validates connection before creating entry"
+    file: config_flow.py
+    
+  test-before-setup:
+    status: done
+    comment: "async_setup_entry checks connectivity, raises ConfigEntryNotReady"
+    file: __init__.py
+    
+  unique-config-entry:
+    status: done
+    comment: "_async_abort_entries_match prevents duplicates"
+    file: config_flow.py
+
+  # Bronze: Entities
+  entity-unique-id:
+    status: done
+    comment: "All entities have _attr_unique_id from entry_id + key"
+    file: entity/__init__.py
+    
+  has-entity-name:
+    status: done
+    comment: "Base entity sets _attr_has_entity_name = True"
+    file: entity/__init__.py
+    
+  entity-event-setup:
+    status: exempt
+    comment: "No event entities in this integration"
+
+  # Bronze: Data Storage
+  runtime-data:
+    status: done
+    comment: "Uses ConfigEntry.runtime_data instead of hass.data"
+    file: __init__.py
+
+  # Bronze: Documentation & Branding
+  brands:
+    status: todo
+    comment: "Submit to home-assistant/brands repository"
+    
+  docs-actions:
+    status: exempt
+    comment: "No custom actions/services yet"
+    
+  docs-high-level-description:
+    status: todo
+    comment: "Update README.md with integration description"
+    file: README.md
+    
+  docs-installation-instructions:
+    status: todo
+    comment: "Add HACS installation instructions to README"
+    file: README.md
+    
+  docs-removal-instructions:
+    status: todo
+    comment: "Add removal instructions to README"
+    file: README.md
+
+  # Bronze: Code Quality
+  appropriate-polling:
+    status: done
+    comment: "Uses DataUpdateCoordinator with configurable interval"
+    file: coordinator/__init__.py
+    
+  common-modules:
+    status: done
+    comment: "Uses HA helpers: aiohttp_client, entity, etc."
+    
+  action-setup:
+    status: exempt
+    comment: "No custom actions/services yet"
+
+  # ============================================================
+  # SILVER TIER (10 rules) - Robustness
+  # ============================================================
+  
+  config-entry-unloading:
+    status: done
+    comment: "async_unload_entry unloads platforms correctly"
+    file: __init__.py
+    
+  reauthentication-flow:
+    status: done
+    comment: "Config flow implements async_step_reauth"
+    file: config_flow.py
+    
+  entity-unavailable:
+    status: done
+    comment: "Coordinator sets entities unavailable on error"
+    file: coordinator/__init__.py
+    
+  log-when-unavailable:
+    status: done
+    comment: "_unavailable_logged flag prevents log spam"
+    file: coordinator/__init__.py
+    
+  parallel-updates:
+    status: done
+    comment: "Uses PARALLEL_UPDATES = 0 (coordinator handles)"
+    
+  test-coverage:
+    status: todo
+    comment: "Need >95% test coverage overall"
+    
+  integration-owner:
+    status: todo
+    comment: "Add to CODEOWNERS file"
+    
+  action-exceptions:
+    status: todo
+    comment: "Services must raise HomeAssistantError with translation_key"
+    
+  docs-configuration-parameters:
+    status: todo
+    comment: "Document all config options in README"
+    file: README.md
+    
+  docs-troubleshooting:
+    status: todo
+    comment: "Add troubleshooting section to README"
+    file: README.md
+
+  # ============================================================
+  # GOLD TIER (22 rules) - Polish
+  # ============================================================
+  
+  devices:
+    status: done
+    comment: "Creates devices via DeviceInfo in entities"
+    file: entity/__init__.py
+    
+  diagnostics:
+    status: done
+    comment: "diagnostics.py with redacted sensitive data"
+    file: diagnostics.py
+    
+  discovery:
+    status: exempt
+    comment: "Device requires manual configuration (no mDNS/SSDP)"
+    
+  discovery-update-info:
+    status: exempt
+    comment: "No discovery implemented"
+    
+  reconfiguration-flow:
+    status: done
+    comment: "Config flow implements async_step_reconfigure"
+    file: config_flow.py
+    
+  dynamic-devices:
+    status: exempt
+    comment: "Single device per config entry"
+    
+  entity-category:
+    status: done
+    comment: "Diagnostic entities use EntityCategory.DIAGNOSTIC"
+    file: sensor/__init__.py
+    
+  entity-device-class:
+    status: done
+    comment: "Entities use appropriate device classes"
+    
+  entity-disabled-by-default:
+    status: done
+    comment: "Diagnostic entities disabled by default"
+    
+  entity-translations:
+    status: done
+    comment: "Entity names in strings.json and translations/"
+    file: strings.json
+    
+  exception-translations:
+    status: done
+    comment: "Exceptions use translation_key in HomeAssistantError"
+    file: strings.json
+    
+  icon-translations:
+    status: exempt
+    comment: "Uses standard device class icons"
+    
+  repair-issues:
+    status: exempt
+    comment: "No repair flows needed yet"
+    
+  stale-devices:
+    status: exempt
+    comment: "Single device per config entry"
+    
+  docs-data-update:
+    status: todo
+    comment: "Document polling interval and data refresh"
+    file: README.md
+    
+  docs-examples:
+    status: todo
+    comment: "Add usage examples to README"
+    file: README.md
+    
+  docs-known-limitations:
+    status: todo
+    comment: "Document known limitations"
+    file: README.md
+    
+  docs-supported-devices:
+    status: todo
+    comment: "List supported devices/firmware versions"
+    file: README.md
+    
+  docs-supported-functions:
+    status: todo
+    comment: "Document all supported features"
+    file: README.md
+    
+  docs-use-cases:
+    status: todo
+    comment: "Add example use cases and automations"
+    file: README.md
+    
+  # Gold: Advanced Features
+  secondary-config-entry:
+    status: exempt
+    comment: "No secondary config entries needed"
+    
+  subentry-support:
+    status: exempt
+    comment: "No sub-entries needed"
+
+  # ============================================================
+  # PLATINUM TIER (3 rules) - Excellence
+  # ============================================================
+  
+  async-dependency:
+    status: done
+    comment: "All API calls use async aiohttp, no sync dependencies"
+    file: api/client.py
+    
+  inject-websession:
+    status: done
+    comment: "API client receives ClientSession from async_get_clientsession"
+    file: __init__.py
+    
+  strict-typing:
+    status: done
+    comment: "py.typed marker present, mypy --strict passes"
+    file: py.typed
+
+# ============================================================
+# Progress Summary (auto-calculated by CI)
+# ============================================================
+# DO NOT EDIT - This section is for reference
+#
+# Bronze:  XX/18 (basic quality)
+# Silver:  XX/10 (robustness) 
+# Gold:    XX/22 (polish)
+# Platinum: 3/3 (excellence)
+#
+# Current Tier: [calculated by tooling]
+# ============================================================

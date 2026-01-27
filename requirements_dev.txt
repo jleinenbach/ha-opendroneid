@@ -1,0 +1,13 @@
+# Development dependencies
+homeassistant>=2026.1.0
+aiohttp>=3.9.0
+
+# Type checking (BOTH required for Platinum)
+pyright>=1.1.390
+mypy>=1.13.0
+
+# Linting & Formatting
+ruff>=0.8.0
+
+# Pre-commit hooks
+pre-commit>=4.0.0

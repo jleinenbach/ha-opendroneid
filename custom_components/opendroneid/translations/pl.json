@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Skonfiguruj odbiornik OpenDroneID BLE",
+        "description": "Ta integracja wykrywa drony transmitujące BLE Remote ID za pomocą istniejących proxy Bluetooth ESPHome.\n\n{ble_info}",
+        "data": {
+          "inactive_timeout": "Limit czasu nieaktywności"
+        },
+        "data_description": {
+          "inactive_timeout": "Czas w sekundach, po którym dron zostanie uznany za nieaktywny i usunięty"
+        }
+      }
+    },
+    "error": {
+      "unknown": "Wystąpił nieoczekiwany błąd. Sprawdź logi."
+    },
+    "abort": {
+      "already_configured": "OpenDroneID jest już skonfigurowany. Potrzebna jest tylko jedna instancja."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje OpenDroneID",
+        "data": {
+          "inactive_timeout": "Limit czasu nieaktywności"
+        },
+        "data_description": {
+          "inactive_timeout": "Czas w sekundach, po którym dron zostanie uznany za nieaktywny i usunięty"
+        }
+      }
+    }
+  },
+  "entity": {
+    "device_tracker": {
+      "drone": {
+        "name": "Dron"
+      }
+    }
+  },
+  "exceptions": {
+    "setup_failed": {
+      "message": "Nie udało się skonfigurować OpenDroneID. Sprawdź, czy Bluetooth jest dostępny."
+    }
+  }
+}

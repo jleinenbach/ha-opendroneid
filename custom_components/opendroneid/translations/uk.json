@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Налаштувати приймач OpenDroneID BLE",
+        "description": "Ця інтеграція виявляє дрони, що передають BLE Remote ID, використовуючи ваші існуючі Bluetooth-проксі ESPHome.\n\n{ble_info}",
+        "data": {
+          "inactive_timeout": "Тайм-аут неактивності"
+        },
+        "data_description": {
+          "inactive_timeout": "Час у секундах до того, як дрон буде вважатися неактивним і видаленим"
+        }
+      }
+    },
+    "error": {
+      "unknown": "Сталася неочікувана помилка. Будь ласка, перевірте журнали."
+    },
+    "abort": {
+      "already_configured": "OpenDroneID вже налаштовано. Потрібен лише один екземпляр."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Параметри OpenDroneID",
+        "data": {
+          "inactive_timeout": "Тайм-аут неактивності"
+        },
+        "data_description": {
+          "inactive_timeout": "Час у секундах до того, як дрон буде вважатися неактивним і видаленим"
+        }
+      }
+    }
+  },
+  "entity": {
+    "device_tracker": {
+      "drone": {
+        "name": "Дрон"
+      }
+    }
+  },
+  "exceptions": {
+    "setup_failed": {
+      "message": "Не вдалося налаштувати OpenDroneID. Будь ласка, перевірте, чи доступний Bluetooth."
+    }
+  }
+}
