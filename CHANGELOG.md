@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Trust verdicts for detected drones: each transmitter's raw broadcasts are
+  assessed for physical and protocol inconsistencies (teleports, counter
+  conflicts, reserved field values) and exposed as `trust_verdict`,
+  `trust_score`, `trust_reasons` and `trust_alert` entity attributes
+- `remoteid` dependency for trust assessment
+
 ## [0.2.0] - 2026-01-27
 
 ### Added

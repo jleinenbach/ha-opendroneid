@@ -129,3 +129,108 @@ async def test_dragonsync_enabled(mock_hass, mock_config_entry, mock_bluetooth):
         await coordinator.async_setup()
 
         mock_socket.connect.assert_called_once_with("tcp://localhost:4224")
+
+
+@pytest.mark.asyncio
+async def test_trust_verdict_from_basic_id(
+    mock_hass, mock_config_entry, mock_bluetooth
+):
+    """Test that a Basic ID broadcast yields a trust verdict."""
+    coordinator = OpenDroneIDCoordinator(mock_hass, mock_config_entry)
+
+    service_info = MagicMock()
+    service_info.address = "AA:BB:CC:DD:EE:FF"
+    service_info.rssi = -50
+    service_info.service_data = {
+        "0000fffa-0000-1000-8000-00805f9b34fb": bytes([0x0D, 0x42])
+        + bytes([0x01, 0x02])
+        + b"TESTDRONE"
+        + bytes(13)
+        + bytes(3)
+    }
+
+    with patch.object(coordinator, "async_set_updated_data"):
+        coordinator._async_handle_bluetooth_event(service_info, None)
+
+    drone = coordinator.data["aabbccddeeff"]
+    # An unauthenticated but consistent transmitter is plausible
+    assert drone.trust_verdict == "plausible"
+    assert drone.trust_score == pytest.approx(0.5)
+    assert drone.trust_reasons == []
+    assert drone.trust_alert is False
+
+
+@pytest.mark.asyncio
+async def test_trust_verdict_reasons_are_strings(
+    mock_hass, mock_config_entry, mock_bluetooth
+):
+    """Test that flagged broadcasts expose string reasons."""
+    coordinator = OpenDroneIDCoordinator(mock_hass, mock_config_entry)
+
+    # Location message whose speed-accuracy code (5) is reserved in F3411;
+    # the tracker flags repeated out-of-range/reserved fields as suspicious.
+    location = (
+        bytes([0x12, 0x00, 45, 40, 0x3F])
+        + (519225000).to_bytes(4, "little", signed=True)
+        + (44792000).to_bytes(4, "little", signed=True)
+        + (2240).to_bytes(2, "little")
+        + (2240).to_bytes(2, "little")
+        + (2200).to_bytes(2, "little")
+        + bytes([0x55, 0x55])
+        + (10000).to_bytes(2, "little")
+        + bytes([15, 0])
+    )
+    assert len(location) == 25
+
+    def _service_info(counter):
+        info = MagicMock()
+        info.address = "AA:BB:CC:DD:EE:FF"
+        info.rssi = -50
+        info.service_data = {
+            "0000fffa-0000-1000-8000-00805f9b34fb": bytes([0x0D, counter]) + location
+        }
+        return info
+
+    with patch.object(coordinator, "async_set_updated_data"):
+        for counter in range(3):
+            coordinator._async_handle_bluetooth_event(_service_info(counter), None)
+
+    drone = coordinator.data["aabbccddeeff"]
+    assert drone.trust_verdict in ("suspicious", "spoofed")
+    assert len(drone.trust_reasons) > 0
+    assert all(isinstance(reason, str) for reason in drone.trust_reasons)
+
+
+@pytest.mark.asyncio
+async def test_trust_tracker_rejection_keeps_previous_verdict(
+    mock_hass, mock_config_entry, mock_bluetooth
+):
+    """Test that a tracker rejection does not break message handling."""
+    coordinator = OpenDroneIDCoordinator(mock_hass, mock_config_entry)
+
+    service_info = MagicMock()
+    service_info.address = "AA:BB:CC:DD:EE:FF"
+    service_info.rssi = -50
+    service_info.service_data = {
+        "0000fffa-0000-1000-8000-00805f9b34fb": bytes([0x0D, 0x42])
+        + bytes([0x01, 0x02])
+        + b"TESTDRONE"
+        + bytes(13)
+        + bytes(3)
+    }
+
+    with (
+        patch.object(coordinator, "async_set_updated_data"),
+        patch.object(
+            coordinator._tracker, "ingest", side_effect=ValueError("not remote id")
+        ),
+    ):
+        coordinator._async_handle_bluetooth_event(service_info, None)
+
+    drone = coordinator.data["aabbccddeeff"]
+    # Decoded fields still update; trust fields keep their defaults
+    assert drone.uas_id == "TESTDRONE"
+    assert drone.trust_verdict == ""
+    assert drone.trust_reasons == []
+    assert drone.trust_score is None
+    assert drone.trust_alert is False

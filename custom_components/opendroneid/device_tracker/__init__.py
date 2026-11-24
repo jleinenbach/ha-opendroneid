@@ -221,6 +221,15 @@ class DroneDeviceTracker(TrackerEntity):
         if drone.operator_id:
             attrs["operator_id"] = drone.operator_id
 
+        # Add trust assessment of the raw broadcasts
+        if drone.trust_verdict:
+            attrs["trust_verdict"] = drone.trust_verdict
+            attrs["trust_alert"] = drone.trust_alert
+            if drone.trust_score is not None:
+                attrs["trust_score"] = round(drone.trust_score, 2)
+            if drone.trust_reasons:
+                attrs["trust_reasons"] = drone.trust_reasons
+
         # Add signal info
         if drone.rssi:
             attrs["rssi"] = drone.rssi

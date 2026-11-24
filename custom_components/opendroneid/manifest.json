@@ -7,7 +7,7 @@
   "integration_type": "hub",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/jleinenbach/ha-opendroneid/issues",
-  "requirements": ["pyzmq>=25.0.0"],
+  "requirements": ["pyzmq>=25.0.0", "remoteid==0.3.2"],
   "dependencies": ["bluetooth"],
   "version": "0.2.0",
   "homeassistant": "2026.1.0"

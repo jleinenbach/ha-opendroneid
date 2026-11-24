@@ -13,6 +13,7 @@ Since January 2024, all drones sold in the EU must broadcast their identificatio
 ## Features
 
 - 🛸 **Drone Detection** - Automatically detects drones transmitting BLE Remote ID
+- 🛡️ **Spoofing Awareness** - Trust verdicts flag physically or protocol-inconsistent broadcasts
 - 📍 **Real-time Position Tracking** - Shows drone position on Home Assistant maps
 - 🏠 **Pilot Location** - Displays operator/pilot position when available
 - 📡 **Multi-Proxy Support** - Uses all your existing ESPHome BLE proxies
@@ -103,6 +104,10 @@ Each drone entity includes these attributes:
 | `operator_latitude` | Pilot/operator latitude |
 | `operator_longitude` | Pilot/operator longitude |
 | `operator_id` | Operator registration ID |
+| `trust_verdict` | Trust assessment of the raw broadcasts (`plausible`, `suspicious`, `spoofed`) |
+| `trust_score` | Trust score from 0 (certainly fake) to 1 (consistent) |
+| `trust_reasons` | Reasons behind the verdict, when flagged |
+| `trust_alert` | `true` when the verdict warrants attention |
 | `rssi` | Signal strength in dBm |
 | `last_seen` | Timestamp of last received message |
 
@@ -115,6 +120,23 @@ Each drone entity includes these attributes:
 | `emergency` | Drone declared emergency |
 | `malfunction` | Remote ID system failure |
 | `unknown` | Status not reported |
+
+### Trust Verdicts
+
+Remote ID broadcasts are not authenticated on most drones flying today, and
+fake drones can be injected by readily available tools. Each transmitter's
+raw broadcasts are therefore assessed for physical and protocol
+inconsistencies:
+
+| Verdict | Meaning |
+|---------|---------|
+| `plausible` | Nothing contradicts the broadcast (normal for honest drones) |
+| `suspicious` | Physical or protocol inconsistencies a real transmitter rarely shows |
+| `spoofed` | Strong evidence of spoofing (e.g. teleporting positions, one identity on two radios) |
+
+The verdict is advisory only - no drone is ever hidden or dropped. Use
+`trust_alert` and `trust_reasons` in automations, e.g. to be notified when a
+`suspicious` drone appears nearby.
 
 ## ESPHome Proxy Configuration
 
