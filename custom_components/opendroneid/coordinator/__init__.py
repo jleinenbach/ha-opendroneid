@@ -19,6 +19,7 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+import remoteid
 
 from ..const import (
     CONF_DRAGONSYNC_ENABLED,
@@ -90,6 +91,12 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         )
         self.config_entry = entry
         self._decoder = OpenDroneIDDecoder()
+
+        # Trust tracker: assesses raw broadcasts for physical/protocol
+        # inconsistencies (teleports, counter conflicts, spoofing tool
+        # fingerprints). Monotonic clock only - no UTC clock is passed,
+        # so DRIP signatures are never reported as authenticated.
+        self._tracker = remoteid.Tracker()
 
         # Dict of drone_id -> DroneData
         self.data: dict[str, DroneData] = {}
@@ -260,6 +267,9 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
         drone.last_seen = time.time()
         drone.message_counter = counter
 
+        # Assess trustworthiness of the raw broadcast
+        self._update_trust(drone, bytes(service_data))
+
         # Update drone data based on message type
         self._update_drone_from_message(drone, message)
 
@@ -269,6 +279,33 @@ class OpenDroneIDCoordinator(DataUpdateCoordinator[dict[str, DroneData]]):
 
         # Notify listeners of the update
         self.async_set_updated_data(self.data)
+
+    def _update_trust(self, drone: DroneData, service_data: bytes) -> None:
+        """Update the trust assessment from the raw BLE service data.
+
+        Feeds the raw advertisement (application code, message counter and
+        message/pack) to the remoteid Tracker, keyed by source address so
+        each transmitter is judged on its own track. A rejected frame leaves
+        the previous assessment untouched.
+        """
+        try:
+            verdict = self._tracker.ingest(
+                service_data,
+                "ble_service_data",
+                address=drone.source_address,
+                rssi=drone.rssi,
+            )
+        except ValueError:
+            _LOGGER.debug(
+                "Trust tracker rejected service data from %s",
+                drone.source_address,
+            )
+            return
+
+        drone.trust_verdict = verdict.verdict
+        drone.trust_reasons = list(verdict.reasons)
+        drone.trust_score = verdict.score
+        drone.trust_alert = verdict.is_alert
 
     def _update_drone_from_message(
         self,

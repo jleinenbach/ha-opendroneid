@@ -5,7 +5,7 @@ Implements decoding of ASTM F3411-22a / ASD-STAN prEN 4709-002 messages.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 import struct
 from typing import Final
@@ -160,6 +160,12 @@ class DroneData:
     last_seen: float = 0.0
     message_counter: int = 0
     source_address: str = ""
+
+    # Trust assessment of the raw broadcasts (remoteid Tracker)
+    trust_verdict: str = ""
+    trust_reasons: list[str] = field(default_factory=list)
+    trust_score: float | None = None
+    trust_alert: bool = False
 
 
 class OpenDroneIDDecoder:
